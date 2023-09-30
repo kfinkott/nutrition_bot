@@ -1,0 +1,314 @@
+#kevin fink
+#kevin@shorecode.org
+#Sept 4 2023
+#nutrition_bot/nb_api_fetch.py
+
+#150 points/day
+#then no more calls
+#1 request/s 
+
+import time
+import pandas as pd
+import requests
+from pprint import pprint
+import nb_sql_tasks
+import sqlalchemy
+from typing import Union
+
+class Nb_api:
+    def __init__(self, token: str):
+        """
+        Initializes class variables for the API and flagging variables to be used as a workaround for the limitations of the telebot module
+        
+        Args:
+        self ( _obj_ ) : class object
+        token (str) : Telebot API key
+        
+        Returns:
+        Does not return
+        """
+        self.token = token
+        self.ingred_id_df = pd.read_csv('ingredients.csv', sep=';') # creats a dataframe from a csv that indicates the numerical food id for a given simple food
+        self.ingred_id_df.set_index('ingredient', inplace=True)
+        self.ing_search_user_list = []      #initialize a list that flags if a user has chosen to search by ingredient using the inline menu
+        self.nutrient_search_user_list = [] #initialize a list that flags if a user has chosen to search by nutrient using the inline menu
+        self.user_unit_choice = {}          #initialize a dict that stores the unit size and type for the user
+        self.user_nutrient_choice = {}      #initialize a dict that stores the nutrient chosen by the user
+        self.diary_flag = []             #flag to manage callback queries, indicates the user chose to view diary        
+        self.plan_flag = []              #flag to manage callback queries, indicates the user chose to view diet plan
+        self.diary_nut_flag = []         #flag to manage callback queries, indicates the user chose to view diary nutrition report
+        self.plan_nut_flag = []          #flag to manage callback queries, indicates the user chose to view diet plan nutrition report
+        self.dfdiary = pd.DataFrame()
+        self.dfplan = pd.DataFrame()
+        self.recipe_r_flag = {}         #flag to manage callback queries, indicates the user chose search recipes by recipe name        
+        self.recipe_i_flag = {}         #flag to manage callback queries, indicates the user chose search recipes by ingredient name
+        
+    def validate_ingred(self, ing: list) -> Union[None, int]:   
+        """
+        This method is not named well. What it does is tries to fetch an ID from a database based on a query (ingredient name). It tries three different ways to do this. The first is using the raw query. The secsing all the elements of the query list joined by whitespaces. The third tries to search using each individual element of the list
+        
+        Args:
+        self ( _obj_ ) : class object
+        ing (str) : Ingredient list
+        
+        Returns:
+        Union[None, int]: Returns None if the ingredient cannot be found in the ID database. Returns an ingredient ID in the form of an int if a result is found
+        """
+        error=False
+        # TypeError validation is used here to cycle through the different possible ways to search the database for the query
+        try:
+            # Searches using the raw user input
+            ingred_id = int(self.ingred_id_df['ingredientId'].get(ing)) #search the simple food dataframe for the simple ID for the  food that the user inputted as a string
+        except TypeError:
+            try:                
+                joined_query_list = ' '.join(ing)                
+                ingred_id = int(self.ingred_id_df['ingredientId'].get(joined_query_list)) #search the simple food dataframe for the query_list words concatenated
+            except TypeError:
+                for i in ing:
+                    try:
+                        ingred_id = int(self.ingred_id_df['ingredientId'].get(i)) #sequentially search the simple food dataframe for each word in the query_list
+                        error = False
+                    except TypeError:
+                        error = True
+        if error == True:
+            return None # Returns none if the user input does not match any IDs in the ingredient database
+        else:
+            return ingred_id
+        
+    def clean_query(self, query: str) -> str:
+        """
+        Removes some punctuation from the query if punctuarion exists
+        
+        Args:
+        self ( _obj_ ) : class object
+        query (str) : User inputted query
+        
+        Returns:
+        str: Returns a list containing queries to serach for
+        """
+        # Removes some common punctuation
+        query_stripped = query.replace(',', ' ').replace('-', ' ').replace('"', ' ').replace('(', ' ').replace(')', ' ').replace(':', ' ')         
+        # Creates a list of individual words fro mthe query
+        query_split = query_stripped.split(' ')
+        while '' in query_split:
+            query_split.remove('') # Removes empty values generated by double whitespaces from the punctuation cleaning
+        return query_split
+    
+    def fetch_whole_food(self, query: str, amount: int, unit: str) -> requests.Response.json:            
+        """
+        Searches the spoonacular API for a simple food based on the ingredient ID provided
+        
+        Args:
+        self ( _obj_ ) : class object
+        query (str) : User inputted query
+        amount (int) : The quantity of the simple food
+        unit (str) : The measurement unit to be used
+        
+        Returns:
+        requests.Response.json: Dict that contains the API json response
+        """
+        # Converts query to lower case
+        query = query.lower()
+        query_list = self.clean_query(query)
+        ingred_id = self.validate_ingred(query_list)
+        # Unit is the measurement unit for the ingredient. Amount is the quantity of units
+        querystring = {"amount": amount,"unit": unit, 'apiKey': self.token}        
+        url = f'https://api.spoonacular.com/food/ingredients/{ingred_id}/information'
+        self.food_response = requests.get(url, params=querystring)        
+        return self.food_response.json()
+    
+    def create_dataframes(self, sql_auth: dict) -> tuple[pd.DataFrame, pd.DataFrame, list[str, str]]:
+        """
+        Creates dataframes from the spoonacular API ingredient search results. 
+        
+        Args:
+        self: class object
+        sql_auth (dict): sql server authentication details
+        
+        Returns:
+        (pd.DataFrame, pd.DataFrame, list[str, str, str]): Returns two dataframes split from one dataframe. This is to place them side by side in an image. Also returns a list containing two titles to be used in the final image.
+        """
+        #initialize the dataframe with the nutrients dataset: [2][0]
+        self.food_df = pd.DataFrame(self.food_result[2][0], columns=['name', 'amount', 'unit', 'percentOfDailyNeeds'])    
+        #initialize the flavonoids datframe to concatenate later: [2][2]
+        flav_df = pd.DataFrame(self.food_result[2][2])
+        #add a single row, nutrition score to the dataframe: [2][1].
+        flav_df.loc[len(flav_df)] = self.food_result[2][1]
+        #add a single row, estimated cost to the dataframe: [1].
+        flav_df.loc[len(flav_df)] = self.food_result[1]
+        #cost_df = pd.DataFrame(self.food_result[1])
+        #join the dataframes
+        self.food_df = pd.concat([self.food_df, flav_df])
+        self.food_df.reset_index(inplace=True, drop=True)
+        self.food_df.set_index('name')
+        # sets the title for the first half of the image to the searched food and the measured quantity. Sets the title of the second half to shorecode.org
+        df_title = [self.food_result[0]['title'].capitalize(), 'shorecode.org']
+        #splits the dataframe to have a wider image output instead of a very tall one         
+        passwd = nb_sql_tasks.decrypt_passwd('KEVIN_SQL', sql_auth['password_key'])
+        engine = nb_sql_tasks.engine(sql_auth, passwd, 'nb_ing')
+        nb_sql_tasks.df_to_sql(self.food_df, df_title, engine)
+        #split the dataframe and concatenate it side by side later in the image. For better UX        
+        df_len = len(self.food_df.index)        
+        df1 = self.food_df.iloc[:df_len//2]
+        df2 = self.food_df.iloc[df_len//2:]              
+        return df1, df2, df_title                    
+        
+    def clean_response(self, response: requests.Response.json) -> list[dict, dict, dict]:
+        """
+        Makes the title more clear and concatenates the desired results from the spoonacular JSON response into a list
+        
+        Args:
+        self ( _obj_ ) : class object
+        response (requests.Response.json) : Dict containing spoonacular API response
+        
+        Returns:
+        list[dict, dict, dict]: A list containing: dataframe title, estimated cost, nutrition values (in that order)
+        """
+        try:
+            #Alters the title based on the user choice of pieces or grams
+            if response['unit'] == 'p':                
+                unit_for_title = 'piece(s)'
+            else:
+                unit_for_title = 'g'
+            response['amount'] = int(response['amount'])         
+            # Adds a title to be used for SQL storage and visualization to the results
+            self.food_result = [{'title': response['name'] + ': ' + str(response['amount']) + unit_for_title}]
+        except KeyError:
+            # Adds a title if the spoonacular API does not return one
+            self.food_result = [{'title': 'unknown'}]
+        #nested list > [list{dict(title)}{dict(cost)}[list{dict(nutrition)}]
+        # Concatenates the json results into a list as above
+        self.food_result.append({'name': 'Estimated cost', 'amount': str(response['estimatedCost']['value']), 'unit': 
+                                 response['estimatedCost']['unit']})        
+        self.food_result.append([response['nutrition']['nutrients']])
+        self.food_result[2].append(response['nutrition']['properties'][2])
+        self.food_result[2].append(response['nutrition']['flavonoids'])
+        return self.food_result
+                
+    def fetch_recipes(self, query: str, number: int, apikey: str) -> str:
+        """
+        Searches the spoonacular API for recipes by the recipe name provided by the user
+        
+        Args:
+        self ( _obj_ ) : class object
+        query (str) : User inputted recipe name
+        number (int) : Number of results to be returned by the spoonacular API
+        apikey (str) : api key for the spoonacular api
+        
+        Returns:
+        str: Dict containing recipes from the json response from spoonacular API
+        """
+        # Converts query to lowercase
+        query = query.lower()
+        query_list = self.clean_query(query)  
+        final_query = ' '.join(query_list)
+        # number is the number of unique recipe results to return. random chooses recipes that satisfy the query at random from the API
+        querystring = {"apiKey": apikey,"query": final_query, 'number': number, 'random': 'true'}        
+        url = f'https://api.spoonacular.com/recipes/complexSearch'
+        recipe_response = requests.get(url, params=querystring)        
+        return recipe_response.json()
+    
+    def fetch_recipe_by_ing(self, query: str, number: int, apikey: str) -> str:
+        """
+        Searches the spoonacular API for recipes by the ingredient name provided by the user
+        
+        Args:
+        self ( _obj_ ) : class object
+        query (str) : User inputted ingredient name
+        number (int) : Number of results to be returned by the spoonacular API
+        apikey (str) : api key for the spoonacular API
+        
+        Returns:
+        str: Dict containing recipes from the json response from spoonacular API
+        """
+        # Converts the query to lowercase
+        query = query.lower()
+        query_list = self.clean_query(query)  
+        final_query = ' '.join(query_list)
+        # number is the number of unique recipe results to return.
+        querystring = {"apiKey": apikey,"ingredients": final_query, 'number': number}        
+        url = f'https://api.spoonacular.com/recipes/findByIngredients'
+        recipe_response = requests.get(url, params=querystring)        
+        return recipe_response.json() 
+    
+    def fetch_recipe_by_nutrient(self, query: str, number: int, apikey: str) -> str:
+        """
+        Searches the spoonacular API for recipes by the nutrient name provided by the user
+        
+        Args:
+        self ( _obj_ ) : class object
+        query (str) : User inputted nutrient name
+        number (int) : Number of results to be returned by the spoonacular API
+        apikey (str) : api key for the spoonacular API
+        
+        Returns:
+        str: Dict containing recipes from the json response from spoonacular API
+        """
+        # The values here were selected by the programmer based on what he determines constitutes a significant amount of the nutrient.
+        # The values are a mix of grams, mcg and mg. Refer to the spoonacular API docs to determine which unit measurement is used for each nutrient
+        nutrient_dict = {'minCarbs': 10, 'minProtein': 20, 'minCalories': 600, 'minFat': 15, 'minCopper': 0.1, 
+                         'minCalcium': 200, 'minCholine': 100, 'minSaturatedFat': 5, 
+                         'minVitaminA': 150, 'minVitaminC': 15, 'minVitaminD': 5, 'minVitaminE': 3, 'minVitaminK': 25,
+                         'minVitaminB1': 0.2, 'minVitaminB2': 0.2, 'minVitaminB3': 4, 'minVitaminB5': 1, 
+                         'minVitaminB6': 0.35, 'minVitaminB12': 0.4, 'minFiber': 7, 'minFolate': 70,
+                         'minIodine': 40, 'minIron': 6, 'minMagnesium':150, 'minManganese': 0.4, 
+                         'minPhosphorus': 400, 'minPotassium': 1300, 'minSelenium': 20, 'minSugar': 12, 'minZinc':4}       
+        # nutrient_dict[query] selects the user's choice from the above nutrient_dict
+        querystring = {"apiKey": apikey, query: nutrient_dict[query], 'random': 'true'}        
+        url = f'https://api.spoonacular.com/recipes/findByNutrients'
+        self.recipe_response = requests.get(url, params=querystring)        
+        return self.recipe_response.json()    
+    
+    def fetch_recipe_id(self, query: str, apikey: str) -> requests.Response:
+        """
+        Searches the spoonacular API for a recipes based on provided recipe ID
+        
+        Args:
+        self ( _obj_ ) : class object
+        query (str) : recipe ID
+        apikey (str) :   api key for the spoonacular API
+        
+        Returns:
+        requests.Response: Dict containing the recipe information json from spoonacular API
+        """
+        querystring = {"apiKey": apikey, 'includeNutrition': 'true'}        
+        url = f'https://api.spoonacular.com/recipes/{query}/information'
+        self.id_response = requests.get(url, params=querystring)
+        return self.id_response        
+    
+    def fetch_recipe_title(self, query: str, apikey: str) -> list:
+        """
+        Retrieves the title of a recipe from the spoonacular API
+        
+        Args:
+        self ( _obj_ ) : class object
+        query (str) : Recipe ID
+        apikey (str) :   api key for the spoonacular API
+        
+        Returns:
+        list: Returns a list containing the recipe title and a stamp of the creator (in that order)
+        """
+        querystring = {"apiKey": apikey}        
+        url = f'https://api.spoonacular.com/recipes/{query}/summary'
+        self.title_response = requests.get(url, params=querystring)
+        result = self.title_response.json()
+        # Creates a dataframe title to be used in other functions
+        df_title = [result['title'], 'shorecode.org']
+        return df_title
+    
+    def fetch_recipe_card(self, recipe_id: str, apikey: str) -> str:
+        """
+        Gets the recipe card for the chosen recipe from the spoonacular API. Searches by recipe ID. The recipe card contains ingredients and instructions to make the recipe along with an image of the recipe
+        
+        Args:
+        self ( _obj_ ) : class object
+        recipe_id (str) : Recipe id
+        apikey (str) :    api key for the spoonacular API
+        
+        Returns:
+        str: Dict containing the URL for the recipe card
+        """
+        querystring = {"apiKey": apikey}
+        url = f'https://api.spoonacular.com/recipes/{recipe_id}/card'
+        card_response = requests.get(url, params=querystring)
+        return card_response.json()
