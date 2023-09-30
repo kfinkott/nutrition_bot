@@ -6,7 +6,7 @@ This project is made possible by the available nutrient data in the [fooddb](www
 
 and
 
-[The United States Department of Agriculture](: https://www.ars.usda.gov/northeast-area/beltsville-md-bhnrc/beltsville-human-nutrition-research-center/food-surveys-research-group/docs/fndds/) 
+[The United States Department of Agriculture](https://www.ars.usda.gov/northeast-area/beltsville-md-bhnrc/beltsville-human-nutrition-research-center/food-surveys-research-group/docs/fndds/) 
 
 ***
 
