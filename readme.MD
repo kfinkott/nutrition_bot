@@ -12,7 +12,7 @@ and
 
 The Spoonacular API and Telegram API were used to create this bot
 
-[https://spoonacular.com/food-api](https://spoonacular.com/food-api) 
+[https://spoonacular.com/food-api](https://spoonacular.com/food-api)  
 [https://core.telegram.org/bots/api](https://core.telegram.org/bots/api) 
 
 
