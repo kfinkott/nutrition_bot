@@ -21,7 +21,7 @@ The Spoonacular API and Telegram API were used to create this bot
 3 - [Create a Telegram bot and get a Telegram Bot API key](https://core.telegram.org/bots/tutorial)  
 4 - [Setup a mysql server](https://dev.mysql.com/doc/mysql-getting-started/en/)   
 5 - Create the 'nb.yaml' configuration file using 'src/nb_create_yaml.py'  
-6 - Run 'src/cronjobs/nb_create_weekly_cron_jobs.py'  
+6 - Run 'src/cronjobs/nb_create_weekly_cron_jobs.py'. This creates the schedule for the automated weekly reports. It does not add any users.  
 6 - Run 'src/nb_main.py'
 
 ***
