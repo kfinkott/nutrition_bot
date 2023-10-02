@@ -21,7 +21,7 @@ The Spoonacular API and Telegram API were used to create this bot
 1 - Install dependencies:  
 pip install requirements.txt  
 2 - [Get a Spoonacular API key](https://spoonacular.com/food-api)  
-3 - [Get a Telegram Bot API key](https://core.telegram.org/bots/api)  
+3 - Create a Telegram bot and [Get a Telegram Bot API key](https://core.telegram.org/bots/api)  
 4 - [Setup a mysql server](https://dev.mysql.com/doc/mysql-getting-started/en/)   
 5 - Create the 'nb.yaml' configuration file using 'src/nb_create_yaml.py'  
 6 - Run 'src/cronjobs/nb_create_weekly_cron_jobs.py'  
