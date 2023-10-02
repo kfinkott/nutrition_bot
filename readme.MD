@@ -16,8 +16,7 @@ The Spoonacular API and Telegram API were used to create this bot
 
 ***
 ####  How to use this? (Linux)
-1 - Install dependencies:  
-pip install requirements.txt  
+1 - Install dependencies:  'pip install requirements.txt'
 2 - [Get a Spoonacular API key](https://spoonacular.com/food-api)  
 3 - [Create a Telegram bot and get a Telegram Bot API key](https://core.telegram.org/bots/tutorial)  
 4 - [Setup a mysql server](https://dev.mysql.com/doc/mysql-getting-started/en/)   
