@@ -2,11 +2,9 @@
 A telegram bot that feeds the user nutrition data
 
 ***
-This project is made possible by the available nutrient data in the [fooddb](www.foodb.ca)  database 
-
-and
-
-[The United States Department of Agriculture](https://www.ars.usda.gov/northeast-area/beltsville-md-bhnrc/beltsville-human-nutrition-research-center/food-surveys-research-group/docs/fndds/) 
+This project is made possible by the available nutrient data found in:
+- [The Foodb Database](www.foodb.ca)
+- [The United States Department of Agriculture](https://www.ars.usda.gov/northeast-area/beltsville-md-bhnrc/beltsville-human-nutrition-research-center/food-surveys-research-group/docs/fndds/) 
 
 ***
 
