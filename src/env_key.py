@@ -6,6 +6,7 @@
 from cryptography.fernet import Fernet
 import os
 import getpass
+from typing import Union
 
 def save_key(env_var: str) -> Fernet.generate_key:
     """
@@ -38,7 +39,7 @@ def get_key(env_var: str) -> str:
     return key
 
 
-def decrypt_passwd(env_var: str=None, passwd: str=None, key: str=None) -> str:
+def decrypt_passwd(env_var: Union[str, None]=None, passwd: Union[str, None]=None, key: Union[str, None]=None) -> str:
     """
     Decrypts a password using the key stored in environment variables or a supplied key
     
@@ -57,7 +58,7 @@ def decrypt_passwd(env_var: str=None, passwd: str=None, key: str=None) -> str:
     cipher_suite: Fernet = Fernet(key)
     return cipher_suite.decrypt(passwd).decode()
 
-def encrypt_passwd(env_var: str=None, passwd: str=None, key: str=None):
+def encrypt_passwd(env_var: Union[str, None]=None, passwd: Union[str, None]=None, key: Union[str, None]=None) -> str:
     """
     Encrypts a password that is provided by manual input (stdin) or a password that is passsed as an argument
     
@@ -74,4 +75,6 @@ def encrypt_passwd(env_var: str=None, passwd: str=None, key: str=None):
     if key == None:
         key = os.getenv(env_var)
     cipher_suite = Fernet(key)
-    return cipher_suite.encrypt(passwd.encode()).decode()
+    if len(passwd) > 0:
+        return cipher_suite.encrypt(passwd.encode()).decode()
+    return ''

@@ -7,13 +7,11 @@
 #then no more calls
 #1 request/s 
 
-import time
+from typing import Union
 import pandas as pd
 import requests
-from pprint import pprint
+import numpy as np
 import nb_sql_tasks
-import sqlalchemy
-from typing import Union
 
 class Nb_api:
     def __init__(self, token: str):
@@ -22,7 +20,7 @@ class Nb_api:
         
         Args:
         self ( _obj_ ) : class object
-        token (str) : Telebot API key
+        token (str) : Spoonacular API key
         
         Returns:
         Does not return
@@ -70,10 +68,9 @@ class Nb_api:
                         error = False
                     except TypeError:
                         error = True
-        if error == True:
+        if error is True or len(ing) == 0:
             return None # Returns none if the user input does not match any IDs in the ingredient database
-        else:
-            return ingred_id
+        return ingred_id
         
     def clean_query(self, query: str) -> str:
         """
@@ -87,7 +84,8 @@ class Nb_api:
         str: Returns a list containing queries to serach for
         """
         # Removes some common punctuation
-        query_stripped = query.replace(',', ' ').replace('-', ' ').replace('"', ' ').replace('(', ' ').replace(')', ' ').replace(':', ' ')         
+        query_stripped = query.replace(',', ' ').replace('-', ' '
+                        ).replace('"', ' ').replace('(', ' ').replace(')', ' ').replace(':', ' ')         
         # Creates a list of individual words fro mthe query
         query_split = query_stripped.split(' ')
         while '' in query_split:
@@ -114,8 +112,12 @@ class Nb_api:
         # Unit is the measurement unit for the ingredient. Amount is the quantity of units
         querystring = {"amount": amount,"unit": unit, 'apiKey': self.token}        
         url = f'https://api.spoonacular.com/food/ingredients/{ingred_id}/information'
-        self.food_response = requests.get(url, params=querystring)        
-        return self.food_response.json()
+        self.food_response = requests.get(url, params=querystring, timeout=10)
+        print(self.food_response.status_code)
+        try:
+            return self.food_response.json()
+        except requests.exceptions.JSONDecodeError:
+            return None
     
     def create_dataframes(self, sql_auth: dict) -> tuple[pd.DataFrame, pd.DataFrame, list[str, str]]:
         """
@@ -178,8 +180,12 @@ class Nb_api:
             self.food_result = [{'title': 'unknown'}]
         #nested list > [list{dict(title)}{dict(cost)}[list{dict(nutrition)}]
         # Concatenates the json results into a list as above
-        self.food_result.append({'name': 'Estimated cost', 'amount': str(response['estimatedCost']['value']), 'unit': 
+        if response['estimatedCost']:
+            self.food_result.append({'name': 'Estimated cost', 'amount': str(response['estimatedCost']['value']), 'unit': 
                                  response['estimatedCost']['unit']})        
+        else:
+            self.food_result.append({'name': 'Estimated cost', 'amount': np.nan, 'unit': 
+                                 np.nan})                    
         self.food_result.append([response['nutrition']['nutrients']])
         self.food_result[2].append(response['nutrition']['properties'][2])
         self.food_result[2].append(response['nutrition']['flavonoids'])
@@ -204,8 +210,8 @@ class Nb_api:
         final_query = ' '.join(query_list)
         # number is the number of unique recipe results to return. random chooses recipes that satisfy the query at random from the API
         querystring = {"apiKey": apikey,"query": final_query, 'number': number, 'random': 'true'}        
-        url = f'https://api.spoonacular.com/recipes/complexSearch'
-        recipe_response = requests.get(url, params=querystring)        
+        url = 'https://api.spoonacular.com/recipes/complexSearch'
+        recipe_response = requests.get(url, params=querystring, timeout=10)        
         return recipe_response.json()
     
     def fetch_recipe_by_ing(self, query: str, number: int, apikey: str) -> str:
@@ -227,8 +233,8 @@ class Nb_api:
         final_query = ' '.join(query_list)
         # number is the number of unique recipe results to return.
         querystring = {"apiKey": apikey,"ingredients": final_query, 'number': number}        
-        url = f'https://api.spoonacular.com/recipes/findByIngredients'
-        recipe_response = requests.get(url, params=querystring)        
+        url = 'https://api.spoonacular.com/recipes/findByIngredients'
+        recipe_response = requests.get(url, params=querystring, timeout=10)        
         return recipe_response.json() 
     
     def fetch_recipe_by_nutrient(self, query: str, number: int, apikey: str) -> str:
@@ -255,8 +261,8 @@ class Nb_api:
                          'minPhosphorus': 400, 'minPotassium': 1300, 'minSelenium': 20, 'minSugar': 12, 'minZinc':4}       
         # nutrient_dict[query] selects the user's choice from the above nutrient_dict
         querystring = {"apiKey": apikey, query: nutrient_dict[query], 'random': 'true'}        
-        url = f'https://api.spoonacular.com/recipes/findByNutrients'
-        self.recipe_response = requests.get(url, params=querystring)        
+        url = 'https://api.spoonacular.com/recipes/findByNutrients'
+        self.recipe_response = requests.get(url, params=querystring, timeout=10)
         return self.recipe_response.json()    
     
     def fetch_recipe_id(self, query: str, apikey: str) -> requests.Response:
@@ -273,7 +279,7 @@ class Nb_api:
         """
         querystring = {"apiKey": apikey, 'includeNutrition': 'true'}        
         url = f'https://api.spoonacular.com/recipes/{query}/information'
-        self.id_response = requests.get(url, params=querystring)
+        self.id_response = requests.get(url, params=querystring, timeout=10)
         return self.id_response        
     
     def fetch_recipe_title(self, query: str, apikey: str) -> list:
@@ -290,7 +296,7 @@ class Nb_api:
         """
         querystring = {"apiKey": apikey}        
         url = f'https://api.spoonacular.com/recipes/{query}/summary'
-        self.title_response = requests.get(url, params=querystring)
+        self.title_response = requests.get(url, params=querystring, timeout=10)
         result = self.title_response.json()
         # Creates a dataframe title to be used in other functions
         df_title = [result['title'], 'shorecode.org']
@@ -310,5 +316,5 @@ class Nb_api:
         """
         querystring = {"apiKey": apikey}
         url = f'https://api.spoonacular.com/recipes/{recipe_id}/card'
-        card_response = requests.get(url, params=querystring)
+        card_response = requests.get(url, params=querystring, timeout=10)
         return card_response.json()

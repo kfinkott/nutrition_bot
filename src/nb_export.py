@@ -3,10 +3,9 @@
 #Sept 25 2023
 #nutrition_bot/nb_export.py
 
-import pandas as pd
-import nb_sql_tasks
+import os
 import zipfile
-import pygsheets
+import pandas as pd
 
 def to_csv(userid: str, df: pd.DataFrame, data_name: str) -> str:
     """
@@ -20,6 +19,8 @@ def to_csv(userid: str, df: pd.DataFrame, data_name: str) -> str:
     Returns:
     str: File path for the exported file
     """
+    if not os.path.isdir('dataviz'):
+        os.mkdir('dataviz')    
     fn = f'dataviz/{data_name}{userid}.csv'
     df.to_csv(fn)
     return fn
@@ -36,6 +37,8 @@ def to_xcel(userid: str, df: pd.DataFrame, data_name: str) -> str:
     Returns:
     str: File path for the exported file
     """
+    if not os.path.isdir('dataviz'):
+        os.mkdir('dataviz')    
     fn = f'dataviz/{data_name}{userid}.xlsx'
     df.to_excel(fn)
     return fn
@@ -52,6 +55,8 @@ def to_html(userid: str, df: pd.DataFrame, data_name: str) -> str:
     Returns:
     str: File path for the exported filey
     """
+    if not os.path.isdir('dataviz'):
+        os.mkdir('dataviz')    
     fn = f'dataviz/{data_name}{userid}.html'
     df.to_html(fn)
     return fn
@@ -68,6 +73,8 @@ def to_json(userid: str, df: pd.DataFrame, data_name: str) -> str:
     Returns:
     str: File path for the exported file
     """
+    if not os.path.isdir('dataviz'):
+        os.mkdir('dataviz')    
     fn = f'dataviz/{data_name}{userid}.json'
     df.to_json(fn)
     return fn
@@ -83,6 +90,8 @@ def zip_all(userid: str, *files: list) -> str:
     Returns:
     str: File path for the exported file
     """
+    if not os.path.isdir('dataviz'):
+        os.mkdir('dataviz')    
     fn = f'dataviz/{userid}_nutritionbot_data.zip'
     zipped = zipfile.ZipFile(fn, mode='w', compression=zipfile.ZIP_DEFLATED, compresslevel=2)
     for f in files:

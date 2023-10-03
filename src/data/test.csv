@@ -1,0 +1,67 @@
+id,name,unit_name,nutrient_nbr,rank
+1003,Protein,G,203,600
+1004,Total lipid (fat),G,204,800
+1005,"Carbohydrate, by difference",G,205,1110
+1008,Energy,KCAL,208,300
+1018,"Alcohol, ethyl",G,221,18200
+1051,Water,G,255,100
+1057,Caffeine,MG,262,18300
+1058,Theobromine,MG,263,18400
+1063,"Sugars, Total NLEA",G,269,1500
+1079,"Fiber, total dietary",G,291,1200
+1087,"Calcium, Ca",MG,301,5300
+1089,"Iron, Fe",MG,303,5400
+1090,"Magnesium, Mg",MG,304,5500
+1091,"Phosphorus, P",MG,305,5600
+1092,"Potassium, K",MG,306,5700
+1093,"Sodium, Na",MG,307,5800
+1095,"Zinc, Zn",MG,309,5900
+1098,"Copper, Cu",MG,312,6000
+1103,"Selenium, Se",UG,317,6200
+1105,Retinol,UG,319,7430
+1106,"Vitamin A, RAE",UG,320,7420
+1107,"Carotene, beta",UG,321,7440
+1108,"Carotene, alpha",UG,322,7450
+1109,Vitamin E (alpha-tocopherol),MG,323,7905
+1114,Vitamin D (D2 + D3),UG,328,8700
+1120,"Cryptoxanthin, beta",UG,334,7460
+1122,Lycopene,UG,337,7530
+1123,Lutein + zeaxanthin,UG,338,7560
+1124,Vitamin E (label entry primarily),IU,340,999999
+1162,"Vitamin C, total ascorbic acid",MG,401,6300
+1165,Thiamin,MG,404,6400
+1166,Riboflavin,MG,405,6500
+1167,Niacin,MG,406,6600
+1175,Vitamin B-6,MG,415,6800
+1177,"Folate, total",UG,417,6900
+1178,Vitamin B-12,UG,418,7300
+1180,"Choline, total",MG,421,7220
+1185,Vitamin K (phylloquinone),UG,430,8800
+1186,Folic acid,UG,431,7000
+1187,"Folate, food",UG,432,7100
+1190,"Folate, DFE",UG,435,7200
+1242,"Vitamin E, added",MG,573,7920
+1246,"Vitamin B-12, added",UG,578,7340
+1253,Cholesterol,MG,601,15700
+1258,"Fatty acids, total saturated",G,606,9700
+1259,SFA 4:0,G,607,9800
+1260,SFA 6:0,G,608,9900
+1261,SFA 8:0,G,609,10000
+1262,SFA 10:0,G,610,10100
+1263,SFA 12:0,G,611,10300
+1264,SFA 14:0,G,612,10500
+1265,SFA 16:0,G,613,10700
+1266,SFA 18:0,G,614,10900
+1268,MUFA 18:1,G,617,12100
+1269,PUFA 18:2,G,618,13100
+1270,PUFA 18:3,G,619,13900
+1271,PUFA 20:4,G,620,14700
+1272,PUFA 22:6 n-3 (DHA),G,621,15300
+1275,MUFA 16:1,G,626,11700
+1276,PUFA 18:4,G,627,14250
+1277,MUFA 20:1,G,628,12400
+1278,PUFA 20:5 n-3 (EPA),G,629,15000
+1279,MUFA 22:1,G,630,12500
+1280,PUFA 22:5 n-3 (DPA),G,631,15200
+1292,"Fatty acids, total monounsaturated",G,645,11400
+1293,"Fatty acids, total polyunsaturated",G,646,12900

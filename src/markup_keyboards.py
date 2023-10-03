@@ -352,12 +352,12 @@ def recipe_search_choice() -> InlineKeyboardMarkup:
     }, row_width=3)
     return markup    
 
-def recipe_choice(api_response: str) -> InlineKeyboardMarkup:
+def recipe_choice(api_response: list) -> InlineKeyboardMarkup:
     """
     Inline menu that allows the user to choose a recipe from a list of recipes
     
     Args:
-    api_response (str) : JSON object that contains the list of recipes and their IDs returned by the spoonacular API
+    api_response (list) : JSON object that contains the list of recipes and their IDs returned by the spoonacular API
     
     Returns:
     InlineKeyboardMarkup: returns an object that can be used in Telegram API POSTs

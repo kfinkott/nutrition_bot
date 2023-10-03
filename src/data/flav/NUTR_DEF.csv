@@ -1,0 +1,27 @@
+Nutr_no;Nutrient name;Flav_Class;Tagname;Unit
+731;Cyanidin;Anthocyanidins;CYAD;mg
+740;Petunidin;Anthocyanidins;PETUNIDIN;mg
+741;Delphinidin ;Anthocyanidins;DELPH;mg
+742;Malvidin;Anthocyanidins;MALVIDIN;mg
+743;Pelargonidin;Anthocyanidins;;mg
+745;Peonidin;Anthocyanidins;PEONIDIN;mg
+749;(+)-Catechin;Flavan-3-ols;;mg
+750;(-)-Epigallocatechin;Flavan-3-ols;EPICATEGC;mg
+751;(-)-Epicatechin;Flavan-3-ols;EPICATEC;mg
+752;(-)-Epicatechin 3-gallate;Flavan-3-ols;EPICATECG3;mg
+753;(-)-Epigallocatechin 3-gallate;Flavan-3-ols;;mg
+755;Theaflavin;Flavan-3-ols;;mg
+756;Thearubigins;Flavan-3-ols;;mg
+758;Eriodictyol;Flavanones;;mg
+759;Hesperetin;Flavanones;HESPT;mg
+762;Naringenin;Flavanones;NARING;mg
+770;Apigenin;Flavones;APIGEN;mg
+773;Luteolin;Flavones;LUTEOL;mg
+785;Isorhamnetin;Flavonols;;mg
+786;Kaempferol;Flavonols;KAEMF;mg
+788;Myricetin;Flavonols;MYRIC;mg
+789;Quercetin;Flavonols;QUERCE;mg
+791;Theaflavin-3,3'-digallate;Flavan-3-ols;;mg
+792;Theaflavin-3'-gallate;Flavan-3-ols;;mg
+793;Theaflavin-3-gallate;Flavan-3-ols;;mg
+794;(+)-Gallocatechin;Flavan-3-ols;GALCATEGC;mg

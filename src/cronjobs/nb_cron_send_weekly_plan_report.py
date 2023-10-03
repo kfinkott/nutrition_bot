@@ -3,14 +3,13 @@
 #Sept 25 2023
 #nutrition_bot/cronjobs/nb_cron_send_weekly_plan_report.py
 
+from datetime import datetime
+import json
 import sys
+import telebot
 sys.path.append('..')
 import nb_sql_tasks
 import nb_sql_reports
-import telebot
-from datetime import datetime
-from dataclasses import dataclass
-import json
 
 passwd = nb_sql_tasks.decrypt_passwd('KEVIN_SQL')
 engine = nb_sql_tasks.engine(passwd, 'nb_diet_plan_cron')
@@ -36,4 +35,4 @@ for u in user_list:
     passwd = nb_sql_tasks.decrypt_passwd('KEVIN_SQL')
     engine = nb_sql_tasks.engine(passwd, 'nb_diet_plan')
     fn = reports.get_weekly_png(u[0], table_name, this_week, engine)
-    bot.send_photo(u[0], open(fn, 'rb'))    
+    bot.send_photo(u[0], open(fn, 'rb'))
