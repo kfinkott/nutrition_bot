@@ -25,6 +25,13 @@ The Spoonacular API and Telegram API were used to create this bot
 6 - Run 'src/nb_main.py'
 
 ***
+
+This bot uses the HTTP protocol method GET to interact with the Telegram Bot API. This is done using a polling loop within the Python code.  
+  
+The bot can be modified to use a webhook that receives HTTP POST messages from the Telegram Bot API. This provides the best latency for
+receiving input from the user.
+
+***
 This project was created using the Wing IDE. The project file is 'nutrition_bot.wpr'
 
 ***
