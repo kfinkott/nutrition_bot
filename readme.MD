@@ -25,7 +25,9 @@ pip install requirements.txt
 4 - [Setup a mysql server](https://dev.mysql.com/doc/mysql-getting-started/en/)   
 5 - Create the 'nb.yaml' configuration file using 'src/nb_create_yaml.py'  
 6 - Run 'src/cronjobs/nb_create_weekly_cron_jobs.py'  
-6 - Run 'src/nb_main.py'
+6 - Run 'src/nb_main.py'  
+
+Be careful when copying the Spoonacular API key. On their website the line that they key is on has a single whitespace at the end of the key. this whitespace will break this Nutrition Bot.  
 
 ***
 This project was created using the Wing IDE. The project file is 'nutrition_bot.wpr'  
