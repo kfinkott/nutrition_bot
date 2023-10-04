@@ -4,7 +4,6 @@
 #nutrition_bot/nb.py
 
 #todo
-#check for cell phone screen usage
 #add to portfolio: video, screenshots, fanfare! include bandit passes
 
 #offer to health canada (explain webhook, offer implementation)

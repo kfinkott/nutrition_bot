@@ -28,8 +28,7 @@ pip install requirements.txt
 6 - Run 'src/nb_main.py'
 
 ***
-This project was created using the Wing IDE. The project file is 'nutrition_bot.wpr'  
-This project was made possible by the [Telebot](https://github.com/eternnoir/pyTelegramBotAPI) library
+This project was created using the Wing IDE. The project file is 'nutrition_bot.wpr'
 
 ***
 Created by the team @ https://www.shorecode.org

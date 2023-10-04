@@ -9,8 +9,6 @@ import telebot
 import pandas as pd
 import requests
 from sqlalchemy.exc import ProgrammingError
-from telebot.async_telebot import AsyncTeleBot
-import asyncio
 import nb_api_fetch
 import nb_data_viz
 import markup_keyboards as mk
@@ -35,12 +33,12 @@ def create_bot(bottoken: str, spoon_token: str, sql_auth: dict):
     Returns:
     Does not return
     """
-    bot = AsyncTeleBot(bottoken)
+    bot = telebot.TeleBot(bottoken)
     # create a class object for the spoontacular API and data storage
     nb_api = nb_api_fetch.Nb_api(spoon_token)
     sql_reports = nb_sql_reports.Sql_reports()
 
-    async def send_food(message: telebot.types.Message, amount: int, unit: str, bot: telebot.TeleBot):
+    def send_food(message: telebot.types.Message, amount: int, unit: str, bot: telebot.TeleBot):
         """
         Function to process the user request for nutritional information for a 
         simple food (aka ingredient). The function also sends the result in 
@@ -59,13 +57,13 @@ def create_bot(bottoken: str, spoon_token: str, sql_auth: dict):
         """
         response = nb_api.fetch_whole_food(message.text, amount, unit)
         if response is None:
-            await bot.send_message(
+            bot.send_message(
                 message.chat.id, 'Could not find the item, please try another search.')
         else:
             nb_api.clean_response(response)
             df1, df2, df_title = nb_api.create_dataframes(sql_auth)
             final_photo = get_ing_photos(df1, df2, df_title)
-            await bot.send_photo(message.chat.id, open(
+            bot.send_photo(message.chat.id, open(
                 final_photo, 'rb'), reply_markup=mk.submit_ing(df_title))
 
     def get_ing_photos(df1: pd.DataFrame, df2: pd.DataFrame, df_title: list)-> os.PathLike:
@@ -138,7 +136,7 @@ def create_bot(bottoken: str, spoon_token: str, sql_auth: dict):
         final_img = nb_data_viz.collate_photos(df1img, df2img)
         return final_img
 
-    async def send_nutrient(call: telebot.types.CallbackQuery, nutrient_id: str, start_indx: int = 0):
+    def send_nutrient(call: telebot.types.CallbackQuery, nutrient_id: str, start_indx: int = 0):
         """
         Function that processes the users request to view food by nutrient. 
         Sends the user the result in the form of an image via the Telegram bot
@@ -157,10 +155,10 @@ def create_bot(bottoken: str, spoon_token: str, sql_auth: dict):
         get_nutrient_data(nutrient_id)
         nutrient_result = get_nutrient_data(nutrient_id)
         final_img = get_nutrient_photo(nutrient_result, start_indx)
-        await bot.send_photo(call.from_user.id, open(
+        bot.send_photo(call.from_user.id, open(
             final_img, 'rb'), reply_markup=mk.more_nut())
 
-    async def week_nut_diary(call: telebot.types.CallbackQuery, week: str):
+    def week_nut_diary(call: telebot.types.CallbackQuery, week: str):
         """
         Function that retrieves the users diary for a specified week. The 
         function also creates an image of the diary and sends it to the user 
@@ -189,13 +187,13 @@ _week{str(week)}_year{str(this_year)}'
                 call, table_name, week, engine, sql_auth)
             fn = sql_reports.get_weekly_nutrition_png(
                 call, nb_api.dfdiary, week, engine, 'diary', sql_auth)
-            await bot.send_photo(call.from_user.id, open(fn, 'rb'))
+            bot.send_photo(call.from_user.id, open(fn, 'rb'))
         except ProgrammingError as e:
-            await bot.send_message(call.from_user.id,
+            bot.send_message(call.from_user.id,
                              'Cannot find a diary for the week chosen')
             print(e)
 
-    async def week_nut_plan(call: telebot.types.CallbackQuery, week: str):
+    def week_nut_plan(call: telebot.types.CallbackQuery, week: str):
         """
         Function that retrieves the users diet plan for a specified week. The 
         function also creates an image of the diet plan and sends it to the 
@@ -223,9 +221,9 @@ _week{str(week)}_year{str(this_year)}'
                 call, table_name, week, engine, sql_auth)
             fn = sql_reports.get_weekly_nutrition_png(
                 call, nb_api.dfplan, week, engine, 'diet plan', sql_auth)
-            await bot.send_photo(call.from_user.id, open(fn, 'rb'))
+            bot.send_photo(call.from_user.id, open(fn, 'rb'))
         except ProgrammingError:
-            await bot.send_message(call.from_user.id,
+            bot.send_message(call.from_user.id,
                              'Cannot find a diet plan for the week chosen')
 
     def comparison_file_export(userid: int, df: pd.DataFrame) -> tuple[str, str, str, str]:
@@ -280,7 +278,7 @@ _week{str(week)}_year{str(this_year)}'
         plan_json = nb_export.to_json(userid, df, 'diet_plan')
         return plan_csv, plan_xlsx, plan_html, plan_json
 
-    async def callback_logic(call: telebot.types.CallbackQuery):
+    def callback_logic(call: telebot.types.CallbackQuery):
         """
         Function contains a very large block of IF statements. used to filter 
         callback data sent by the various inline keyboards.
@@ -303,12 +301,12 @@ _week{str(week)}_year{str(this_year)}'
 
         if choice == 'i':
             nb_api.ing_search_user_list.append(call.from_user.id)
-            await bot.send_message(
+            bot.send_message(
                 call.from_user.id, "Please choose an option from the following:",
                 reply_markup=mk.ing_unit())
         elif choice[:-1].isdigit() and call.from_user.id in nb_api.ing_search_user_list:
             nb_api.user_unit_choice[call.from_user.id] = choice
-            await bot.send_message(call.from_user.id,
+            bot.send_message(call.from_user.id,
                              "Please type the name of the simple food:")
         else:
             if call.from_user.id in nb_api.ing_search_user_list:
@@ -318,12 +316,12 @@ _week{str(week)}_year{str(this_year)}'
                 'KEVIN_SQL', sql_auth['password_key'])
         if 'choose_plan' in choice:
             df_title = choice[11:]
-            await bot.send_message(call.from_user.id, "Please choose the day and time for the \
+            bot.send_message(call.from_user.id, "Please choose the day and time for the \
 meal you want to add to(bf=breakfast, ln=lunch, dn=dinner):",
                              reply_markup=mk.choose_plan_meal(df_title))
         if 'choose_diary' in choice:
             df_title = choice[12:]
-            await bot.send_message(call.from_user.id, "Please choose the day and time for the meal\
+            bot.send_message(call.from_user.id, "Please choose the day and time for the meal\
 you want to add to(bf=breakfast, ln=lunch, dn=dinner):",
                              reply_markup=mk.choose_diary_meal(df_title))
         if 'add_diary' in choice:
@@ -333,7 +331,7 @@ you want to add to(bf=breakfast, ln=lunch, dn=dinner):",
             result = nb_sql_tasks.add_to_diary(
                 choice[11:-2], call.from_user.id, call.from_user.first_name, choice[-2:], engine)
             if result is not None:
-                await bot.send_message(call.from_user.id,
+                bot.send_message(call.from_user.id,
                                  "Succesfully added entry to diary")
         if 'add_plan' in choice:
             passwd = nb_sql_tasks.decrypt_passwd(
@@ -342,16 +340,16 @@ you want to add to(bf=breakfast, ln=lunch, dn=dinner):",
             result = nb_sql_tasks.add_to_plan(
                 choice[10:-2], call.from_user.id, call.from_user.first_name, choice[-2:], engine)
             if result is not None:
-                await bot.send_message(call.from_user.id,
+                bot.send_message(call.from_user.id,
                                  "Succesfully added entry to diary")
         if choice == 'n':
             nb_api.nutrient_search_user_list.append(call.from_user.id)
-            await bot.send_message(
+            bot.send_message(
                 call.from_user.id, "The following image shows which number to enter for your \
 desired nutrient search:")
-            await bot.send_photo(call.from_user.id, open(
+            bot.send_photo(call.from_user.id, open(
                 'data/nutrient_index.png', 'rb'))
-            await bot.send_message(call.from_user.id,
+            bot.send_message(call.from_user.id,
                              "Please select the number that corresponds to your desired nutrient:", 
                              reply_markup=mk.nutrients())
         if choice.isdigit() and call.from_user.id in nb_api.nutrient_search_user_list:
@@ -364,19 +362,19 @@ desired nutrient search:")
             nb_api.more_nut += 100
             send_nutrient(call, choice, nb_api.more_nut)
         if choice == 'exit_nut':
-            await bot.send_message(
+            bot.send_message(
                 call.from_user.id, "Please choose an option from the following:",
                 reply_markup=mk.main_keys())
         if choice == 'view_diary':
-            await bot.send_message(
+            bot.send_message(
                 call.from_user.id, 'Please choose the diary report you want to see:',
                 reply_markup=mk.view_diary())
         if choice == 'view_plan':
-            await bot.send_message(
+            bot.send_message(
                 call.from_user.id, 'Please choose the diet plan report you want to see:',
                 reply_markup=mk.view_plan())
         if choice == 'plan_daily':
-            await bot.send_message(call.from_user.id, 'Please choose a day of the week:',
+            bot.send_message(call.from_user.id, 'Please choose a day of the week:',
                              reply_markup=mk.plan_choose_weekday())
         if 'weekday_plan' in choice:
             table_name = f'{call.from_user.first_name}_PP_{str(call.from_user.id)}\
@@ -385,9 +383,9 @@ _week{str(this_week)}_year{str(this_year)}'
                 'KEVIN_SQL', sql_auth['password_key'])
             engine = nb_sql_tasks.engine(sql_auth, passwd, 'nb_diet_plan')
             fn = sql_reports.get_daily_png(table_name, choice[12:], engine)
-            await bot.send_photo(call.from_user.id, open(fn, 'rb'))
+            bot.send_photo(call.from_user.id, open(fn, 'rb'))
         if choice == 'diary_daily':
-            await bot.send_message(call.from_user.id, 'Please choose a day of the week:',
+            bot.send_message(call.from_user.id, 'Please choose a day of the week:',
                              reply_markup=mk.diary_choose_weekday())
         if 'weekday_diary' in choice:
             table_name = f'{call.from_user.first_name}_DD_{str(call.from_user.id)}\
@@ -397,17 +395,17 @@ _week{str(this_week)}_year{str(this_year)}'
             engine = nb_sql_tasks.engine(sql_auth, passwd, 'nb_diary')
             fn = sql_reports.get_daily_png(table_name, choice[13:], engine)
             if fn != None:
-                await bot.send_photo(call.from_user.id, open(fn, 'rb'))
+                bot.send_photo(call.from_user.id, open(fn, 'rb'))
             else:
-                await bot.send_message(call.from_user.id,
+                bot.send_message(call.from_user.id,
                                  'A daily plan for that day was not found')
         if choice == 'diary_weekly':
-            await bot.send_message(call.from_user.id, 'Please choose a week or type XX \
+            bot.send_message(call.from_user.id, 'Please choose a week or type XX \
 (where XX is the two digit week number of the year):',
                              reply_markup=mk.diary_choose_week())
             nb_api.diary_flag.append(call.from_user.id)
         if choice == 'plan_weekly':
-            await bot.send_message(
+            bot.send_message(
                 call.from_user.id, 'Please choose a week or type XX (where XX is the \
 two digit week number of the year):', reply_markup=mk.plan_choose_week())
             nb_api.plan_flag.append(call.from_user.id)
@@ -421,9 +419,9 @@ _week{str(choice[10:])}_year{str(this_year)}'
                 engine = nb_sql_tasks.engine(sql_auth, passwd, 'nb_diary')
                 fn, df = sql_reports.get_weekly_png(
                     call, table_name, choice[10:], engine)
-                await bot.send_photo(call.from_user.id, open(fn, 'rb'))
+                bot.send_photo(call.from_user.id, open(fn, 'rb'))
             except ProgrammingError:
-                await bot.send_message(call.from_user.id,
+                bot.send_message(call.from_user.id,
                                  'Cannot find a diary for the week chosen')
         if 'week_plan' in choice:
             nb_api.plan_flag.remove(call.from_user.id)
@@ -436,12 +434,12 @@ _week{str(choice[9:])}_year{str(this_year)}'
                     sql_auth, passwd, 'nb_diet_plan')
                 fn, df = sql_reports.get_weekly_png(
                     call, table_name, choice[9:], engine)
-                await bot.send_photo(call.from_user.id, open(fn, 'rb'))
+                bot.send_photo(call.from_user.id, open(fn, 'rb'))
             except ProgrammingError:
-                await bot.send_message(
+                bot.send_message(
                     call.from_user.id, 'Cannot find a diet plan for the week chosen')
         if 'compare_nutrition' in choice:
-            await bot.send_message(
+            bot.send_message(
                 call.from_user.id, 'Please choose the report:', reply_markup=mk.nutrition_choice())
         if 'show_comparison_weekly' in choice:
             passwd = nb_sql_tasks.decrypt_passwd(
@@ -459,11 +457,11 @@ _week{str(week)}_year{str(this_year)}'
             fn, df = sql_reports.get_compare_diary_plan_weekly_png(
                 call, diary_table_name, plan_table_name, choice[22:],
                 enginediary, engineplan, sql_auth)
-            await bot.send_photo(call.from_user.id, open(fn, 'rb'),
+            bot.send_photo(call.from_user.id, open(fn, 'rb'),
                            reply_markup=mk.request_legend())
         if 'show_legend' in choice:
             fn = sql_reports.get_nutrients_legend_png(sql_auth)
-            await bot.send_photo(call.from_user.id, open(fn, 'rb'))
+            bot.send_photo(call.from_user.id, open(fn, 'rb'))
         if 'clear_diary' in choice:
             if len(choice) > 11:
                 passwd = nb_sql_tasks.decrypt_passwd(
@@ -474,13 +472,13 @@ _year{this_year}'
                 result = nb_sql_tasks.clear_diary(
                     call, choice[11:], table_name, engine)
                 if result is True:
-                    await bot.send_message(call.from_user.id,
+                    bot.send_message(call.from_user.id,
                                      'Diary cleared successfully.')
                 else:
-                    await bot.send_message(
+                    bot.send_message(
                         call.from_user.id, 'Could not clear, data for this day may not exist.')
             else:
-                await bot.send_message(
+                bot.send_message(
                     call.from_user.id, 'Choose which weekday to delete from the diary:',
                     reply_markup=mk.clear_diary_wkday())
         if 'clear_plan' in choice:
@@ -494,34 +492,34 @@ _week{this_week}_year{this_year}'
                 result = nb_sql_tasks.clear_plan(
                     call, choice[10:], table_name, engine)
                 if result is not True:
-                    await bot.send_message(call.from_user.id,
+                    bot.send_message(call.from_user.id,
                                      'Diet plan cleared successfully.')
                 else:
-                    await bot.send_message(
+                    bot.send_message(
                         call.from_user.id, 'Could not clear, data for this day may not exist.')
             else:
-                await bot.send_message(
+                bot.send_message(
                     call.from_user.id, 'Choose which weekday to delete from the plan:',
                     reply_markup=mk.clear_plan_wkday())
         if choice == 'r':
-            await bot.send_message(call.from_user.id, 'Please choose which criteria you \
+            bot.send_message(call.from_user.id, 'Please choose which criteria you \
 want to search by:', reply_markup=mk.recipe_search_choice())
         if choice == 'recipe_r':
             nb_api.recipe_r_flag[call.from_user.id] = True
-            await bot.send_message(call.from_user.id,
+            bot.send_message(call.from_user.id,
                              'Enter the name of the recipe:')
         if choice == 'recipe_i':
             nb_api.recipe_i_flag[call.from_user.id] = True
-            await bot.send_message(call.from_user.id,
+            bot.send_message(call.from_user.id,
                              'Enter the name of the ingredient:')
         if choice == 'recipe_n':
-            await bot.send_message(
+            bot.send_message(
                 call.from_user.id, 'Please choose a nutrient:', reply_markup=mk.recipe_n())
         if 'recipe_n_choice' in choice:
             n_choice = choice[15:]
             recipe = nb_recipe_tasks.RecipeSearch(nb_api)
             api_response = recipe.nutrient_search(n_choice)
-            await bot.send_message(call.from_user.id, 'Please choose a recipe from the following:',
+            bot.send_message(call.from_user.id, 'Please choose a recipe from the following:',
                              reply_markup=mk.recipe_choice(api_response))
         if 'recipe_id' in choice:
             recipe_id = choice[9:]
@@ -538,12 +536,12 @@ want to search by:', reply_markup=mk.recipe_search_choice())
                 url_response = requests.get(card_response['url'], timeout=10)
                 with open(f'temp{call.from_user.id}.png', 'wb') as fn:
                     fn.write(url_response.content)
-                    await bot.send_photo(call.from_user.id, open(
+                    bot.send_photo(call.from_user.id, open(
                         f'temp{call.from_user.id}.png', 'rb'))
                     os.remove(f'temp{call.from_user.id}.png')
             except:
                 pass
-            await bot.send_photo(call.from_user.id, open(img, 'rb'),
+            bot.send_photo(call.from_user.id, open(img, 'rb'),
                            reply_markup=mk.submit_ing(df_title))
         if choice == 'diary_auto_weekly':
             passwd = nb_sql_tasks.decrypt_passwd(
@@ -609,10 +607,10 @@ _week{str(this_week)}_year{str(this_year)}'
                      plan_json, diary_img_fn, plan_img_fn, diary_nutrient_chart_fn,
                      plan_nutrient_chart_fn, diary_weekday_chart_fn, plan_weekday_chart_fn]
             nb_zip = nb_export.zip_all(call.from_user.id, *files)
-            await bot.send_document(call.from_user.id, open(nb_zip, 'rb'))
+            bot.send_document(call.from_user.id, open(nb_zip, 'rb'))
 
     @bot.callback_query_handler(func=lambda call: True)
-    async def main_callback(call: telebot.types.CallbackQuery):
+    def main_callback(call: telebot.types.CallbackQuery):
         """
         Function that is necessary to interact with the Telebot API. Calls the 
           'callback_logic' function to for readability.
@@ -624,10 +622,10 @@ _week{str(this_week)}_year{str(this_year)}'
         Returns:
         Does not return
         """
-        await callback_logic(call)
+        callback_logic(call)
 
     @bot.message_handler(commands=['ingredient'])
-    async def fire_ingredient(message: telebot.types.Message):
+    def fire_ingredient(message: telebot.types.Message):
         """
         Function that retrieves simple food (aka ingredient) data from the 
         Spoonacular API. Also sends the resulting image to the Telegram user
@@ -640,12 +638,12 @@ _week{str(this_week)}_year{str(this_year)}'
         Does not return
         """
         nb_api.ing_search_user_list.append(message.from_user.id)
-        await bot.send_message(
+        bot.send_message(
             message.from_user.id, "Please choose an option from the following:",
             reply_markup=mk.ing_unit())
 
     @bot.message_handler(commands=['recipe'])
-    async def send_recipe(message: telebot.types.Message):
+    def send_recipe(message: telebot.types.Message):
         """
         Function to process the user request for nutritional information for a 
         recipe. The function also sends the result in the form of an image via 
@@ -658,11 +656,11 @@ _week{str(this_week)}_year{str(this_year)}'
         Returns:
         Does not return
         """
-        await bot.send_message(message.from_user.id, 'Please choose which criteria\
+        bot.send_message(message.from_user.id, 'Please choose which criteria\
 you want to search by:', reply_markup=mk.recipe_search_choice())
 
     @bot.message_handler(commands=['nutrient'])
-    async def send_nutrients(message: telebot.types.Message):
+    def send_nutrients(message: telebot.types.Message):
         """
         Function to process the user request for foods that contain a specified
         nutrient. The function also sends the result in the form of an image 
@@ -676,16 +674,16 @@ you want to search by:', reply_markup=mk.recipe_search_choice())
         Does not return
         """
         nb_api.nutrient_search_user_list.append(message.from_user.id)
-        await bot.send_message(
+        bot.send_message(
             message.from_user.id, "The following image shows which number to enter for\
 your desired nutrient search:")
-        await bot.send_photo(message.from_user.id, open(
+        bot.send_photo(message.from_user.id, open(
             'data/nutrient_index.png', 'rb'))
-        await bot.send_message(message.from_user.id, "Please select the number that \
+        bot.send_message(message.from_user.id, "Please select the number that \
 corresponds to your desired nutrient:", reply_markup=mk.nutrients())
 
     @bot.message_handler(commands=['menu'])
-    async def main_menu(message: telebot.types.Message):
+    def main_menu(message: telebot.types.Message):
         """
         Function that presents the inline keyboard containing the main menu for
         the bot.
@@ -697,11 +695,11 @@ corresponds to your desired nutrient:", reply_markup=mk.nutrients())
         Returns:
         Does not return
         """
-        await bot.send_message(message.chat.id, "Please choose an option from the\
+        bot.send_message(message.chat.id, "Please choose an option from the\
 following:", reply_markup=mk.main_keys())
 
     @bot.message_handler(commands=['help'])
-    async def main_menu(message: telebot.types.Message):
+    def main_menu(message: telebot.types.Message):
         """
         Function that presents the help for
         the bot.
@@ -713,7 +711,7 @@ following:", reply_markup=mk.main_keys())
         Returns:
         Does not return
         """
-        await bot.send_message(message.chat.id, "Welcome to the Nutrition Helper Bot! On the left next\
+        bot.send_message(message.chat.id, "Welcome to the Nutrition Helper Bot! On the left next\
  to the text entry box you can find a menu that lets you select some commands. All of the\
  functionality of the bot can be accessed via the main menu. Diet plans and diaries you make will\
  be saved on our server.")        
@@ -722,7 +720,7 @@ following:", reply_markup=mk.main_keys())
     #Default message for when the user input does not match any bot functions,
     #also triggers the main menu
     @bot.message_handler(func=lambda msg: True)
-    async def default(message: telebot.types.Message):
+    def default(message: telebot.types.Message):
         """
         Function that processes Telegram user input of any raw text (not 
         prefixed by a '/')
@@ -748,13 +746,13 @@ following:", reply_markup=mk.main_keys())
             del nb_api.recipe_r_flag[message.from_user.id]
             recipe = nb_recipe_tasks.RecipeSearch(nb_api)
             api_response = recipe.recipe_search(message.text)
-            await bot.send_message(message.from_user.id, 'Please choose a recipe from the following:',
+            bot.send_message(message.from_user.id, 'Please choose a recipe from the following:',
                              reply_markup=mk.recipe_choice(api_response['results']))
         elif message.from_user.id in nb_api.recipe_i_flag.keys():
             del nb_api.recipe_i_flag[message.from_user.id]
             recipe = nb_recipe_tasks.RecipeSearch(nb_api)
             api_response = recipe.ing_search(message.text)
-            await bot.send_message(message.from_user.id, 'Please choose a recipe from the following:',
+            bot.send_message(message.from_user.id, 'Please choose a recipe from the following:',
                              reply_markup=mk.recipe_choice(api_response))
 
         elif len(message.text) <= 2 and message.text.isdigit() and (message.from_user.id in
@@ -774,9 +772,9 @@ _week{message.text}_year{str(this_year)}'
                         sql_auth, passwd, 'nb_diary')
                     fn, df = sql_reports.get_weekly_png(
                         message, table_name, message.text, engine)
-                    await bot.send_photo(message.from_user.id, open(fn, 'rb'))
+                    bot.send_photo(message.from_user.id, open(fn, 'rb'))
                 except ProgrammingError:
-                    await bot.send_message(message.from_user.id,
+                    bot.send_message(message.from_user.id,
                                      'Cannot find a diary for the week chosen')
 
             if message.from_user.id in nb_api.plan_flag:
@@ -790,9 +788,9 @@ _week{message.text}_year{str(this_year)}'
                         sql_auth, passwd, 'nb_diet_plan')
                     fn, df = sql_reports.get_weekly_png(
                         message, table_name, message.text, engine)
-                    await bot.send_photo(message.from_user.id, open(fn, 'rb'))
+                    bot.send_photo(message.from_user.id, open(fn, 'rb'))
                 except ProgrammingError:
-                    await bot.send_message(message.from_user.id,
+                    bot.send_message(message.from_user.id,
                                      'Cannot find a diary for the week chosen')
             if message.from_user.id in nb_api.diary_nut_flag:
                 nb_api.diary_nut_flag.remove(message.from_user.id)
@@ -805,9 +803,9 @@ _week{message.text}_year{str(this_year)}'
                         sql_auth, passwd, 'nb_diary')
                     fn, df = sql_reports.get_weekly_nutrition_png(
                         message, table_name, message.text, engine, sql_auth)
-                    await bot.send_photo(message.from_user.id, open(fn, 'rb'))
+                    bot.send_photo(message.from_user.id, open(fn, 'rb'))
                 except ProgrammingError:
-                    await bot.send_message(message.from_user.id,
+                    bot.send_message(message.from_user.id,
                                      'Cannot find a diary for the week chosen')
 
             if message.from_user.id in nb_api.plan_nut_flag:
@@ -821,14 +819,14 @@ _week{message.text}_year{str(this_year)}'
                         sql_auth, passwd, 'nb_diet_plan')
                     fn, df = sql_reports.get_weekly_nutrition_png(
                         message, table_name, message.text, engine, sql_auth)
-                    await bot.send_photo(message.from_user.id, open(fn, 'rb'))
+                    bot.send_photo(message.from_user.id, open(fn, 'rb'))
                 except ProgrammingError:
-                    await bot.send_message(
+                    bot.send_message(
                         message.from_user.id, 'Cannot find a diet plan for the week chosen')
 
         else:
-            await bot.send_message(
+            bot.send_message(
                 message.chat.id, "Please choose an option from the following:",
                 reply_markup=mk.main_keys())
 
-    asyncio.run(bot.polling())
+    bot.infinity_polling()

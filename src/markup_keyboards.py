@@ -129,7 +129,7 @@ def choose_diary_meal(df_title: str) -> InlineKeyboardMarkup:
     'Sat bf': {'callback_data': f'add_diary+{df_title}sb'},    
     'Sat ln': {'callback_data': f'add_diary+{df_title}sl'},    
     'Sat dn': {'callback_data': f'add_diary+{df_title}sd'}    
-    }, row_width=5)
+    }, row_width=4)
     return markup
 
 def choose_plan_meal(df_title: str) -> InlineKeyboardMarkup:
