@@ -24,8 +24,9 @@ pip install requirements.txt
 3 - [Get a Telegram Bot API key](https://core.telegram.org/bots/api)  
 4 - [Setup a mysql server](https://dev.mysql.com/doc/mysql-getting-started/en/)   
 5 - Create the 'nb.yaml' configuration file using 'src/nb_create_yaml.py'  
-6 - Run 'src/cronjobs/nb_create_weekly_cron_jobs.py'  
-6 - Run 'src/nb_main.py'
+6 - Restart the OS to register the public key into environment variables
+7 - Run 'src/cronjobs/nb_create_weekly_cron_jobs.py'  
+8 - Run 'src/nb_main.py'
 
 ***
 This project was created using the Wing IDE. The project file is 'nutrition_bot.wpr'  
